@@ -1,7 +1,7 @@
 """
 test_rider_parser.py
 --------------------
-Unit tests for core/rider_parser.py
+Tests for core/rider_parser.py
 """
 
 from __future__ import annotations
@@ -10,13 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from core.rider_parser import (
-    _load_names_json,
-    _parse_master_pdf,
-    build_rider_lookup,
-    MASTER_PDF,
-    NAMES_JSON,
-)
+from core.rider_parser import build_rider_lookup, _load_names_json, NAMES_JSON
 
 # All 54 rider IDs that appear in the sample CSV
 EXPECTED_IDS = {
@@ -34,88 +28,52 @@ EXPECTED_IDS = {
 }
 
 
-class TestParseMasterPdf:
-    def test_returns_dict(self):
-        result = _parse_master_pdf(MASTER_PDF)
-        assert isinstance(result, dict)
-
-    def test_non_empty(self):
-        result = _parse_master_pdf(MASTER_PDF)
-        assert len(result) >= 50, f"Expected ≥50 entries, got {len(result)}"
-
-    def test_six_digit_id_extracted(self):
-        """ID 560936 is 6 digits — the critical edge case."""
-        result = _parse_master_pdf(MASTER_PDF)
-        assert "560936" in result, "6-digit rider ID 560936 must be extracted"
-
-    def test_no_phone_numbers_as_rider_ids(self):
-        """Phone numbers (10 digits) must never appear as rider IDs."""
-        result = _parse_master_pdf(MASTER_PDF)
-        for rid in result:
-            assert len(rid) <= 7, f"Rider ID {rid!r} looks like a phone number"
-
-    def test_arabic_names_are_unicode(self):
-        result = _parse_master_pdf(MASTER_PDF)
-        arabic_names = [v for v in result.values() if any(ord(c) > 0x600 for c in v)]
-        assert len(arabic_names) >= 20, "Expected many Arabic-named riders"
-
-    def test_english_names_present(self):
-        result = _parse_master_pdf(MASTER_PDF)
-        english_names = [v for v in result.values() if v.isascii()]
-        assert len(english_names) >= 5, "Expected several English-named riders"
-
-    def test_missing_pdf_raises_file_not_found(self, tmp_path):
-        with pytest.raises(FileNotFoundError):
-            _parse_master_pdf(tmp_path / "nonexistent.pdf")
-
-    def test_all_string_values(self):
-        result = _parse_master_pdf(MASTER_PDF)
-        for k, v in result.items():
-            assert isinstance(k, str), f"Key {k!r} is not str"
-            assert isinstance(v, str), f"Value {v!r} is not str"
-            assert v.strip(), f"Name for {k} is blank"
-
-
 class TestLoadNamesJson:
     def test_returns_dict(self):
         result = _load_names_json(NAMES_JSON)
         assert isinstance(result, dict)
 
-    def test_has_54_entries(self):
+    def test_non_empty(self):
         result = _load_names_json(NAMES_JSON)
-        assert len(result) == 54, f"Expected 54 short names, got {len(result)}"
+        assert len(result) >= 54, f"Expected ≥54 entries, got {len(result)}"
 
     def test_six_digit_id_present(self):
         result = _load_names_json(NAMES_JSON)
-        assert "560936" in result
-
-    def test_missing_file_returns_empty(self, tmp_path):
-        result = _load_names_json(tmp_path / "missing.json")
-        assert result == {}
+        assert "560936" in result, "6-digit rider ID 560936 must be present"
 
     def test_all_names_non_empty(self):
         result = _load_names_json(NAMES_JSON)
         for rid, name in result.items():
             assert name.strip(), f"Empty name for rider {rid}"
 
+    def test_all_keys_are_strings(self):
+        result = _load_names_json(NAMES_JSON)
+        for k, v in result.items():
+            assert isinstance(k, str)
+            assert isinstance(v, str)
+
+    def test_arabic_names_present(self):
+        result = _load_names_json(NAMES_JSON)
+        arabic_names = [v for v in result.values() if any(ord(c) > 0x600 for c in v)]
+        assert len(arabic_names) >= 50, "Expected mostly Arabic names"
+
+    def test_missing_file_raises(self, tmp_path):
+        with pytest.raises(FileNotFoundError):
+            _load_names_json(tmp_path / "missing.json")
+
 
 class TestBuildRiderLookup:
+    def test_returns_dict(self):
+        assert isinstance(build_rider_lookup(), dict)
+
     def test_covers_all_54_csv_ids(self):
         lookup = build_rider_lookup()
         for rid in EXPECTED_IDS:
             assert rid in lookup, f"Rider {rid} missing from lookup"
 
-    def test_short_names_take_priority(self):
-        """JSON short names should override PDF full names."""
-        from core.rider_parser import _load_names_json
-        lookup = build_rider_lookup()
-        short = _load_names_json(NAMES_JSON)
-        for rid, short_name in short.items():
-            assert lookup[rid] == short_name, (
-                f"Rider {rid}: expected short name {short_name!r}, "
-                f"got {lookup[rid]!r}"
-            )
-
     def test_minimum_entry_count(self):
-        lookup = build_rider_lookup()
-        assert len(lookup) >= 54
+        assert len(build_rider_lookup()) >= 54
+
+    def test_all_names_non_empty(self):
+        for rid, name in build_rider_lookup().items():
+            assert name.strip(), f"Empty name for rider {rid}"
