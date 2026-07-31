@@ -202,6 +202,23 @@ body {
 .error-box.hidden { display: none; }
 .error-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
 
+/* ── Form Inputs ─────────────────────────────────────────────────────────── */
+.input-field {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.input-field:focus {
+  border-color: var(--accent);
+}
+
+
 /* ── Primary button ──────────────────────────────────────────────────────── */
 .btn-primary {
   display: inline-flex;

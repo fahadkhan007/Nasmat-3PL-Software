@@ -63,3 +63,12 @@ class GenerateRequest(BaseModel):
 
     month: str
     rows: list[ProcessedRow]
+
+class RiderAdd(BaseModel):
+    rider_id : str
+    name : str
+    password: str
+
+class RiderDelete(BaseModel):
+    rider_id: str
+    password: str

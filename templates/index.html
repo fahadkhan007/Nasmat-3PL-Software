@@ -36,6 +36,20 @@
   <!-- ── Main ── -->
   <main class="main-content">
 
+    <!-- Rider Management -->
+    <section class="card" id="manage-section">
+      <div class="card-header" style="margin-bottom: 0; align-items: center;">
+        <div style="flex: 1;">
+          <h2 class="card-title">Manage Riders</h2>
+          <p class="card-desc">Add or remove riders from the system</p>
+        </div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <button class="btn-primary" id="btn-add-rider" style="background: var(--success);">+ Add Rider</button>
+          <button class="btn-primary" id="btn-delete-rider" style="background: var(--error);">− Delete Rider</button>
+        </div>
+      </div>
+    </section>
+
     <!-- Step 1: Upload -->
     <section class="card" id="upload-section">
       <div class="card-header">
@@ -113,6 +127,33 @@
     </section>
 
   </main>
+
+  <!-- ── Manage Rider Modal ── -->
+  <div class="loading-overlay hidden" id="manage-modal" style="z-index: 300;">
+    <div class="card" style="width: 100%; max-width: 400px; padding: 24px;">
+      <h3 id="modal-title" style="margin-bottom: 16px; font-size: 18px; font-weight: 700;">Add Rider</h3>
+      
+      <div style="margin-bottom: 12px;">
+        <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Rider ID</label>
+        <input type="text" id="manage-id" class="input-field" placeholder="e.g. 4754922">
+      </div>
+      
+      <div style="margin-bottom: 12px;" id="manage-name-group">
+        <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Rider Name (Arabic)</label>
+        <input type="text" id="manage-name" class="input-field" placeholder="اسم السائق" dir="rtl">
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Password</label>
+        <input type="password" id="manage-pass" class="input-field" placeholder="Enter password">
+      </div>
+
+      <div style="display: flex; gap: 12px; justify-content: flex-end;">
+        <button class="btn-primary" id="btn-modal-cancel" style="background: var(--text-muted);">Cancel</button>
+        <button class="btn-primary" id="btn-modal-submit">Submit</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ── Loading overlay ── -->
   <div class="loading-overlay hidden" id="loading-overlay">
@@ -314,6 +355,75 @@
       badgeText.textContent = text;
       badgeDot.className = `badge-dot badge-dot--${type}`;
     }
+
+    // ── Manage Riders ────────────────────────────────────────────────────────
+    const manageModal = document.getElementById("manage-modal");
+    const modalTitle = document.getElementById("modal-title");
+    const manageId = document.getElementById("manage-id");
+    const manageNameGroup = document.getElementById("manage-name-group");
+    const manageName = document.getElementById("manage-name");
+    const managePass = document.getElementById("manage-pass");
+    
+    let manageMode = "add"; // "add" or "delete"
+
+    document.getElementById("btn-add-rider").addEventListener("click", () => {
+      manageMode = "add";
+      modalTitle.textContent = "Add Rider";
+      manageNameGroup.style.display = "block";
+      manageId.value = "";
+      manageName.value = "";
+      managePass.value = "";
+      manageModal.classList.remove("hidden");
+    });
+
+    document.getElementById("btn-delete-rider").addEventListener("click", () => {
+      manageMode = "delete";
+      modalTitle.textContent = "Delete Rider";
+      manageNameGroup.style.display = "none";
+      manageId.value = "";
+      managePass.value = "";
+      manageModal.classList.remove("hidden");
+    });
+
+    document.getElementById("btn-modal-cancel").addEventListener("click", () => {
+      manageModal.classList.add("hidden");
+    });
+
+    document.getElementById("btn-modal-submit").addEventListener("click", async () => {
+      const id = manageId.value.trim();
+      const pass = managePass.value.trim();
+      const name = manageName.value.trim();
+
+      if (!id || !pass) return alert("ID and Password are required.");
+      if (manageMode === "add" && !name) return alert("Name is required.");
+
+      const payload = manageMode === "add" 
+        ? { rider_id: id, name: name, password: pass }
+        : { rider_id: id, password: pass };
+
+      showLoading("Processing...");
+      manageModal.classList.add("hidden");
+
+      try {
+        const res = await fetch("/rider", {
+          method: manageMode === "add" ? "POST" : "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        
+        const text = await res.json();
+        hideLoading();
+        
+        if (!res.ok) {
+          alert("Error: " + (text.detail || res.statusText));
+        } else {
+          alert("Success: " + text);
+        }
+      } catch (err) {
+        hideLoading();
+        alert("Network error.");
+      }
+    });
   </script>
 </body>
 </html>

@@ -1,16 +1,8 @@
-"""
-app.py
-------
-FastAPI application entry point.
-
-Endpoints:
-  GET  /          → Serve the single-page web UI
-  POST /upload    → Validate CSV + match names → JSON preview
-  POST /generate  → Generate and return the formatted PDF
-"""
-
+# pyrefly: ignore [invalid-syntax]
 from __future__ import annotations
 
+from importlib import import_module
+from fastapi import status
 import logging
 from contextlib import asynccontextmanager
 from typing import Any
@@ -24,7 +16,8 @@ import io
 from core.csv_processor import DataError, process_csv, rows_to_preview
 from core.pdf_generator import generate_pdf
 from core.rider_parser import build_rider_lookup
-from models.schemas import GenerateRequest, UploadResponse
+from models.schemas import GenerateRequest, UploadResponse, RiderAdd, RiderDelete
+from helper.json_helper import read_json, write_json
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -47,6 +40,7 @@ async def lifespan(app: FastAPI):
     yield
     logger.info("Shutting down.")
 
+JSON_FILE="rider_names.json"
 
 # ── App ───────────────────────────────────────────────────────────────────────
 app = FastAPI(
@@ -133,6 +127,59 @@ async def generate_report(request: GenerateRequest) -> StreamingResponse:
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+password="hello123"
+
+@app.post("/rider", status_code=status.HTTP_201_CREATED)
+async def add_rider(item : RiderAdd) -> str:
+
+    if(item.password!=password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="invalid password"
+        )
+
+    db_data=await read_json(JSON_FILE)
+    
+    if item.rider_id in db_data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="rider already exists"
+        )
+
+    db_data[item.rider_id] = item.name
+    await write_json(JSON_FILE, db_data)
+    
+    # Update in-memory lookup
+    _rider_lookup[item.rider_id] = item.name
+    
+    return "rider inserted successfully!"
+
+@app.delete("/rider", status_code=status.HTTP_200_OK)
+async def delete_rider(item: RiderDelete) -> str:
+    if(item.password!=password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="invalid password"
+        )
+
+    db_data=await read_json(JSON_FILE)
+
+    if item.rider_id not in db_data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="rider not found"
+        )
+
+    del db_data[item.rider_id]
+    await write_json(JSON_FILE, db_data)
+    
+    # Update in-memory lookup
+    if item.rider_id in _rider_lookup:
+        del _rider_lookup[item.rider_id]
+        
+    return "rider deleted successfully!"
 
 
 @app.get("/health")
