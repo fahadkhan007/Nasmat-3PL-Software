@@ -78,4 +78,4 @@ class RiderRequest(BaseModel):
     password: str
 
 class RiderResponse(BaseModel):
-    data: dict
+    data: list[dict[str, str]]

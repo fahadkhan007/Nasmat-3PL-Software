@@ -195,7 +195,8 @@ async def get_rider(req_password: str) -> RiderResponse:
         )
 
     db_data = await read_json(JSON_FILE)
-    return RiderResponse(data=db_data)
+    ordered_data = [{"id": k, "name": v} for k, v in db_data.items()]
+    return RiderResponse(data=ordered_data)
 
 @app.get("/health")
 async def health() -> dict[str, Any]:

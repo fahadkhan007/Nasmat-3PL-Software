@@ -176,6 +176,7 @@
         <table class="data-table">
           <thead>
             <tr>
+              <th style="text-align: center; width: 40px;">#</th>
               <th style="text-align: left;">ID</th>
               <th style="text-align: right;">NAME</th>
             </tr>
@@ -490,16 +491,19 @@
         viewTableBody.innerHTML = "";
         const riders = data.data; 
         
-        if (Object.keys(riders).length === 0) {
-          viewTableBody.innerHTML = `<tr><td colspan="2" class="td-center">No riders found.</td></tr>`;
+        if (riders.length === 0) {
+          viewTableBody.innerHTML = `<tr><td colspan="3" class="td-center">No riders found.</td></tr>`;
         } else {
-          for (const [id, name] of Object.entries(riders)) {
+          let index = 1;
+          for (const rider of riders) {
             const tr = document.createElement("tr");
             tr.innerHTML = `
-              <td class="td-id" style="text-align: left;">${id}</td>
-              <td class="td-name" dir="rtl">${name}</td>
+              <td class="td-center" style="font-weight: 600; color: var(--text-muted);">${index}</td>
+              <td class="td-id" style="text-align: left;">${rider.id}</td>
+              <td class="td-name" dir="rtl">${rider.name}</td>
             `;
             viewTableBody.appendChild(tr);
+            index++;
           }
         }
         
