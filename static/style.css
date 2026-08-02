@@ -249,6 +249,29 @@ body {
   box-shadow: none;
 }
 
+/* Secondary outline button styles */
+.btn-outline {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+.btn-outline:hover:not(:disabled) {
+  background: var(--surface-2);
+  border-color: #CBD5E1;
+  box-shadow: none;
+  transform: translateY(-1px);
+}
+.btn-danger {
+  color: var(--error);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+.btn-danger:hover:not(:disabled) {
+  background: #FEF2F2;
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #B91C1C;
+}
+
 /* ── Preview table ───────────────────────────────────────────────────────── */
 .table-wrap {
   overflow-x: auto;

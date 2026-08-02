@@ -44,8 +44,9 @@
           <p class="card-desc">Add or remove riders from the system</p>
         </div>
         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <button class="btn-primary" id="btn-add-rider" style="background: var(--success);">+ Add Rider</button>
-          <button class="btn-primary" id="btn-delete-rider" style="background: var(--error);">− Delete Rider</button>
+          <button class="btn-primary" id="btn-view-riders">View Riders</button>
+          <button class="btn-primary btn-outline" id="btn-add-rider">+ Add Rider</button>
+          <button class="btn-primary btn-outline btn-danger" id="btn-delete-rider">− Delete Rider</button>
         </div>
       </div>
     </section>
@@ -149,8 +150,38 @@
       </div>
 
       <div style="display: flex; gap: 12px; justify-content: flex-end;">
-        <button class="btn-primary" id="btn-modal-cancel" style="background: var(--text-muted);">Cancel</button>
+        <button class="btn-primary btn-outline" id="btn-modal-cancel">Cancel</button>
         <button class="btn-primary" id="btn-modal-submit">Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── View Riders Modal ── -->
+  <div class="loading-overlay hidden" id="view-riders-modal" style="z-index: 300;">
+    <div class="card" style="width: 100%; max-width: 600px; padding: 24px; max-height: 80vh; display: flex; flex-direction: column;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="font-size: 18px; font-weight: 700;">Rider Database</h3>
+        <button id="btn-close-view" style="background: none; border: none; cursor: pointer; font-size: 24px; color: var(--text-muted);">&times;</button>
+      </div>
+      
+      <div id="view-auth-section" style="margin-bottom: 16px;">
+        <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Password Required</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="password" id="view-pass" class="input-field" placeholder="Enter password to view">
+          <button class="btn-primary" id="btn-fetch-riders">Fetch list</button>
+        </div>
+      </div>
+
+      <div class="table-wrap" id="view-riders-content" style="display: none; flex: 1; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="text-align: left;">ID</th>
+              <th style="text-align: right;">NAME</th>
+            </tr>
+          </thead>
+          <tbody id="view-table-body"></tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -419,6 +450,60 @@
         } else {
           alert("Success: " + text);
         }
+      } catch (err) {
+        hideLoading();
+        alert("Network error.");
+      }
+    });
+
+    // ── View Riders ──────────────────────────────────────────────────────────
+    const viewModal = document.getElementById("view-riders-modal");
+    const viewPass = document.getElementById("view-pass");
+    const viewContent = document.getElementById("view-riders-content");
+    const viewTableBody = document.getElementById("view-table-body");
+    
+    document.getElementById("btn-view-riders").addEventListener("click", () => {
+      viewPass.value = "";
+      viewContent.style.display = "none";
+      viewModal.classList.remove("hidden");
+    });
+    
+    document.getElementById("btn-close-view").addEventListener("click", () => {
+      viewModal.classList.add("hidden");
+    });
+
+    document.getElementById("btn-fetch-riders").addEventListener("click", async () => {
+      const pass = viewPass.value.trim();
+      if (!pass) return alert("Password is required.");
+      
+      showLoading("Fetching riders...");
+      try {
+        const res = await fetch(`/riders?req_password=${encodeURIComponent(pass)}`);
+        const data = await res.json();
+        hideLoading();
+        
+        if (!res.ok) {
+          alert("Error: " + (data.detail || res.statusText));
+          return;
+        }
+        
+        viewTableBody.innerHTML = "";
+        const riders = data.data; 
+        
+        if (Object.keys(riders).length === 0) {
+          viewTableBody.innerHTML = `<tr><td colspan="2" class="td-center">No riders found.</td></tr>`;
+        } else {
+          for (const [id, name] of Object.entries(riders)) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td class="td-id" style="text-align: left;">${id}</td>
+              <td class="td-name" dir="rtl">${name}</td>
+            `;
+            viewTableBody.appendChild(tr);
+          }
+        }
+        
+        viewContent.style.display = "block";
       } catch (err) {
         hideLoading();
         alert("Network error.");

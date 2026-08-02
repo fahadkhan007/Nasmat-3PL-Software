@@ -72,3 +72,10 @@ class RiderAdd(BaseModel):
 class RiderDelete(BaseModel):
     rider_id: str
     password: str
+
+
+class RiderRequest(BaseModel):
+    password: str
+
+class RiderResponse(BaseModel):
+    data: dict

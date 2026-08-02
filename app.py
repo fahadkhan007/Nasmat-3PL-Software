@@ -1,5 +1,10 @@
-# pyrefly: ignore [invalid-syntax]
 from __future__ import annotations
+# pyrefly: ignore [invalid-syntax]
+from models.schemas import RiderResponse
+from fastapi.openapi.utils import status_code_ranges
+from models.schemas import RiderRequest
+
+# pyrefly: ignore [invalid-syntax]
 
 from importlib import import_module
 from fastapi import status
@@ -181,6 +186,16 @@ async def delete_rider(item: RiderDelete) -> str:
         
     return "rider deleted successfully!"
 
+@app.get("/riders", status_code=status.HTTP_200_OK)
+async def get_rider(req_password: str) -> RiderResponse:
+    if req_password != password:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized access, Denied!"
+        )
+
+    db_data = await read_json(JSON_FILE)
+    return RiderResponse(data=db_data)
 
 @app.get("/health")
 async def health() -> dict[str, Any]:
