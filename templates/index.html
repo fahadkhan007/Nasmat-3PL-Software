@@ -172,17 +172,22 @@
         </div>
       </div>
 
-      <div class="table-wrap" id="view-riders-content" style="display: none; flex: 1; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th style="text-align: center; width: 40px;">#</th>
-              <th style="text-align: left;">ID</th>
-              <th style="text-align: right;">NAME</th>
-            </tr>
-          </thead>
-          <tbody id="view-table-body"></tbody>
-        </table>
+      <div id="view-riders-container" style="display: none; flex: 1; flex-direction: column; overflow: hidden;">
+        <div style="margin-bottom: 12px;">
+          <input type="text" id="view-search-input" class="input-field" placeholder="Search by ID or Name..." autocomplete="off">
+        </div>
+        <div class="table-wrap" style="flex: 1; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="text-align: center; width: 40px;">#</th>
+                <th style="text-align: left;">ID</th>
+                <th style="text-align: right;">NAME</th>
+              </tr>
+            </thead>
+            <tbody id="view-table-body"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -460,12 +465,57 @@
     // ── View Riders ──────────────────────────────────────────────────────────
     const viewModal = document.getElementById("view-riders-modal");
     const viewPass = document.getElementById("view-pass");
-    const viewContent = document.getElementById("view-riders-content");
+    const viewContainer = document.getElementById("view-riders-container");
+    const viewSearchInput = document.getElementById("view-search-input");
     const viewTableBody = document.getElementById("view-table-body");
+    
+    let allRidersCache = [];
+    let searchTimeout = null;
+
+    function renderViewTable(ridersArray) {
+      viewTableBody.innerHTML = "";
+      if (ridersArray.length === 0) {
+        viewTableBody.innerHTML = `<tr><td colspan="3" class="td-center">No riders found.</td></tr>`;
+      } else {
+        let index = 1;
+        for (const rider of ridersArray) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="td-center" style="font-weight: 600; color: var(--text-muted);">${index}</td>
+            <td class="td-id" style="text-align: left;">${rider.id}</td>
+            <td class="td-name" dir="rtl">${rider.name}</td>
+          `;
+          viewTableBody.appendChild(tr);
+          index++;
+        }
+      }
+    }
+
+    viewSearchInput.addEventListener("input", (e) => {
+      const q = e.target.value.trim();
+      clearTimeout(searchTimeout);
+      
+      searchTimeout = setTimeout(async () => {
+        if (!q) {
+          renderViewTable(allRidersCache);
+          return;
+        }
+        try {
+          const res = await fetch(`/search?query=${encodeURIComponent(q)}`);
+          if (res.ok) {
+            const data = await res.json();
+            renderViewTable(data);
+          }
+        } catch (err) {
+          console.error("Search failed", err);
+        }
+      }, 300); // 300ms debounce
+    });
     
     document.getElementById("btn-view-riders").addEventListener("click", () => {
       viewPass.value = "";
-      viewContent.style.display = "none";
+      viewSearchInput.value = "";
+      viewContainer.style.display = "none";
       viewModal.classList.remove("hidden");
     });
     
@@ -488,26 +538,10 @@
           return;
         }
         
-        viewTableBody.innerHTML = "";
-        const riders = data.data; 
-        
-        if (riders.length === 0) {
-          viewTableBody.innerHTML = `<tr><td colspan="3" class="td-center">No riders found.</td></tr>`;
-        } else {
-          let index = 1;
-          for (const rider of riders) {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-              <td class="td-center" style="font-weight: 600; color: var(--text-muted);">${index}</td>
-              <td class="td-id" style="text-align: left;">${rider.id}</td>
-              <td class="td-name" dir="rtl">${rider.name}</td>
-            `;
-            viewTableBody.appendChild(tr);
-            index++;
-          }
-        }
-        
-        viewContent.style.display = "block";
+        allRidersCache = data.data; 
+        viewSearchInput.value = "";
+        renderViewTable(allRidersCache);
+        viewContainer.style.display = "flex";
       } catch (err) {
         hideLoading();
         alert("Network error.");

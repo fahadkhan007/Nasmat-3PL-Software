@@ -194,9 +194,21 @@ async def get_rider(req_password: str) -> RiderResponse:
             detail="Unauthorized access, Denied!"
         )
 
-    db_data = await read_json(JSON_FILE)
-    ordered_data = [{"id": k, "name": v} for k, v in db_data.items()]
+    ordered_data = [{"id": k, "name": v} for k, v in _rider_lookup.items()]
     return RiderResponse(data=ordered_data)
+
+@app.get("/search", status_code=status.HTTP_200_OK)
+async def search_rider(query: str)-> list[dict]:
+    query=query.strip().lower()
+    if not query:
+        return []
+
+    result=[]
+
+    for rider_id, names in _rider_lookup.items():
+        if query in rider_id.lower() or query in names.lower():
+            result.append({"id": rider_id, "name": names})
+    return result
 
 @app.get("/health")
 async def health() -> dict[str, Any]:
