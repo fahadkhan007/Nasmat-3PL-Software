@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>3PL Report Generator | Al Nasmat</title>
-  <meta name="description" content="Upload your daily 3PL CSV and generate a formatted PDF delivery quality report instantly." />
+  <meta name="description" content="Upload your daily 3PL CSV and generate a formatted PDF delivery quality or rider performance report instantly." />
   <link rel="icon" href="/static/favicon.png" type="image/png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/style.css?v=4" />
+  <link rel="stylesheet" href="/static/style.css?v=5" />
 </head>
 <body>
   <!-- ── Background ── -->
@@ -36,96 +36,211 @@
   <!-- ── Main ── -->
   <main class="main-content">
 
-    <!-- Rider Management -->
-    <section class="card" id="manage-section">
-      <div class="card-header" style="margin-bottom: 0; align-items: center;">
-        <div style="flex: 1;">
-          <h2 class="card-title">Manage Riders</h2>
-          <p class="card-desc">Add or remove riders from the system</p>
-        </div>
-        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <button class="btn-primary" id="btn-view-riders">View Riders</button>
-          <button class="btn-primary btn-outline" id="btn-add-rider">+ Add Rider</button>
-          <button class="btn-primary btn-outline btn-danger" id="btn-delete-rider">− Delete Rider</button>
-        </div>
-      </div>
-    </section>
+    <!-- ── Tab Switcher ── -->
+    <div class="tab-switcher" role="tablist">
+      <button class="tab-btn tab-btn--active" id="tab-btn-dq" data-tab="tab-dq"
+              role="tab" aria-selected="true" aria-controls="tab-dq">
+        📊 Delivery Quality Report
+      </button>
+      <button class="tab-btn" id="tab-btn-perf" data-tab="tab-perf"
+              role="tab" aria-selected="false" aria-controls="tab-perf">
+        📈 Rider Performance Report
+      </button>
+    </div>
 
-    <!-- Step 1: Upload -->
-    <section class="card" id="upload-section">
-      <div class="card-header">
-        <span class="step-num">1</span>
-        <div>
-          <h2 class="card-title">Upload Daily CSV</h2>
-          <p class="card-desc">Drop your 3PL delivery quality report here</p>
-        </div>
-      </div>
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- TAB 1: Delivery Quality Report                                       -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <div id="tab-dq" class="tab-content" role="tabpanel" aria-labelledby="tab-btn-dq">
 
-      <div
-        class="dropzone"
-        id="dropzone"
-        role="button"
-        tabindex="0"
-        aria-label="Upload CSV file"
-      >
-        <div class="dropzone-icon" id="dz-icon">
-          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M12 16V4m0 0L8 8m4-4l4 4"/>
-            <rect x="3" y="14" width="18" height="7" rx="2" stroke-opacity="0.4"/>
-          </svg>
-        </div>
-        <div class="dropzone-text" id="dz-text">
-          <strong>Drop CSV here</strong> or click to browse
-        </div>
-        <div class="dropzone-hint">Accepts .csv files from 3PL</div>
-        <input type="file" id="file-input" accept=".csv" hidden />
-      </div>
-
-      <div class="error-box hidden" id="error-box" role="alert">
-        <span class="error-icon">⚠️</span>
-        <span id="error-msg"></span>
-      </div>
-    </section>
-
-    <!-- Step 2: Preview -->
-    <section class="card hidden" id="preview-section">
-      <div class="card-header">
-        <span class="step-num">2</span>
-        <div class="card-header-meta">
-          <div>
-            <h2 class="card-title">Preview Report</h2>
-            <p class="card-desc">
-              <span id="month-label">—</span> &nbsp;·&nbsp;
-              <span id="rider-count">0</span> riders matched
-            </p>
+      <!-- Rider Management -->
+      <section class="card" id="manage-section">
+        <div class="card-header" style="margin-bottom: 0; align-items: center;">
+          <div style="flex: 1;">
+            <h2 class="card-title">Manage Riders</h2>
+            <p class="card-desc">Add or remove riders from the system</p>
           </div>
-          <button class="btn-primary" id="download-btn" disabled>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-              <path d="M12 4v12m0 0l-4-4m4 4l4-4"/>
-              <path d="M4 18h16" stroke-linecap="round"/>
-            </svg>
-            Download PDF
-          </button>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <button class="btn-primary" id="btn-view-riders">View Riders</button>
+            <button class="btn-primary btn-outline" id="btn-add-rider">+ Add Rider</button>
+            <button class="btn-primary btn-outline btn-danger" id="btn-delete-rider">− Delete Rider</button>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div class="table-wrap">
-        <table class="data-table" id="preview-table">
-          <thead>
-            <tr>
-              <th>SR</th>
-              <th>ID NO</th>
-              <th class="col-name">NAMES</th>
-              <th>ORDERS</th>
-              <th>ON TIME</th>
-              <th>PERCENT</th>
-              <th>SEG</th>
-            </tr>
-          </thead>
-          <tbody id="table-body"></tbody>
-        </table>
-      </div>
-    </section>
+      <!-- Step 1: Upload -->
+      <section class="card" id="upload-section">
+        <div class="card-header">
+          <span class="step-num">1</span>
+          <div>
+            <h2 class="card-title">Upload Daily CSV</h2>
+            <p class="card-desc">Drop your 3PL delivery quality report here</p>
+          </div>
+        </div>
+
+        <div
+          class="dropzone"
+          id="dropzone"
+          role="button"
+          tabindex="0"
+          aria-label="Upload CSV file"
+        >
+          <div class="dropzone-icon" id="dz-icon">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 16V4m0 0L8 8m4-4l4 4"/>
+              <rect x="3" y="14" width="18" height="7" rx="2" stroke-opacity="0.4"/>
+            </svg>
+          </div>
+          <div class="dropzone-text" id="dz-text">
+            <strong>Drop CSV here</strong> or click to browse
+          </div>
+          <div class="dropzone-hint">Accepts .csv files from 3PL Delivery Quality report</div>
+          <input type="file" id="file-input" accept=".csv" hidden />
+        </div>
+
+        <div class="error-box hidden" id="error-box" role="alert">
+          <span class="error-icon">⚠️</span>
+          <span id="error-msg"></span>
+        </div>
+      </section>
+
+      <!-- Step 2: Preview -->
+      <section class="card hidden" id="preview-section">
+        <div class="card-header">
+          <span class="step-num">2</span>
+          <div class="card-header-meta">
+            <div>
+              <h2 class="card-title">Preview Report</h2>
+              <p class="card-desc">
+                <span id="month-label">—</span> &nbsp;·&nbsp;
+                <span id="rider-count">0</span> riders matched
+              </p>
+            </div>
+            <button class="btn-primary" id="download-btn" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M12 4v12m0 0l-4-4m4 4l4-4"/>
+                <path d="M4 18h16" stroke-linecap="round"/>
+              </svg>
+              Download PDF
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table" id="preview-table">
+            <thead>
+              <tr>
+                <th>SR</th>
+                <th>ID NO</th>
+                <th class="col-name">NAMES</th>
+                <th>ORDERS</th>
+                <th>ON TIME</th>
+                <th>PERCENT</th>
+                <th>SEG</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div><!-- /tab-dq -->
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- TAB 2: Rider Performance Report                                      -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <div id="tab-perf" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-btn-perf">
+
+      <!-- Step 1: Upload Performance CSV -->
+      <section class="card" id="perf-upload-section">
+        <div class="card-header">
+          <span class="step-num">1</span>
+          <div>
+            <h2 class="card-title">Upload Performance CSV</h2>
+            <p class="card-desc">Drop your 3PL rider performance report here</p>
+          </div>
+        </div>
+
+        <div
+          class="dropzone"
+          id="perf-dropzone"
+          role="button"
+          tabindex="0"
+          aria-label="Upload Performance CSV file"
+        >
+          <div class="dropzone-icon" id="perf-dz-icon">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 16V4m0 0L8 8m4-4l4 4"/>
+              <rect x="3" y="14" width="18" height="7" rx="2" stroke-opacity="0.4"/>
+            </svg>
+          </div>
+          <div class="dropzone-text" id="perf-dz-text">
+            <strong>Drop CSV here</strong> or click to browse
+          </div>
+          <div class="dropzone-hint">Accepts .csv files from 3PL Performance report</div>
+          <input type="file" id="perf-file-input" accept=".csv" hidden />
+        </div>
+
+        <div class="error-box hidden" id="perf-error-box" role="alert">
+          <span class="error-icon">⚠️</span>
+          <span id="perf-error-msg"></span>
+        </div>
+
+        <div class="warning-box hidden" id="perf-warning-box">
+          <span class="warning-icon">⚠️</span>
+          <div>
+            <strong>Some riders not found in the system — PDF generated without them:</strong>
+            <div class="warning-ids" id="perf-warning-ids"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 2: Preview -->
+      <section class="card hidden" id="perf-preview-section">
+        <div class="card-header">
+          <span class="step-num">2</span>
+          <div class="card-header-meta">
+            <div>
+              <h2 class="card-title">Performance Preview</h2>
+              <p class="card-desc">
+                <span id="perf-date-label">—</span> &nbsp;·&nbsp;
+                <span id="perf-rider-count">0</span> riders matched
+              </p>
+            </div>
+            <button class="btn-primary" id="perf-download-btn" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M12 4v12m0 0l-4-4m4 4l4-4"/>
+                <path d="M4 18h16" stroke-linecap="round"/>
+              </svg>
+              Download PDF
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table" id="perf-preview-table">
+            <thead>
+              <tr>
+                <th>SR</th>
+                <th>ID</th>
+                <th class="col-name">NAME</th>
+                <th>COMPLETED DEL.</th>
+                <th>SHIFTS</th>
+                <th>PLANNED HRS</th>
+                <th>ACTUAL HRS</th>
+                <th>ATTENDANCE</th>
+                <th>BREAK HRS</th>
+                <th>LOST HRS</th>
+                <th>ACCEPTANCE</th>
+                <th>DECLINED DEL.</th>
+              </tr>
+            </thead>
+            <tbody id="perf-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div><!-- /tab-perf -->
 
   </main>
 
@@ -205,11 +320,56 @@
   </div>
 
   <script>
-    // ── State ──────────────────────────────────────────────────────────────────
-    let currentRows = null;
+    // ══════════════════════════════════════════════════════════════════════════
+    // SHARED STATE & HELPERS
+    // ══════════════════════════════════════════════════════════════════════════
+
+    const loadOverlay = document.getElementById("loading-overlay");
+    const loadText    = document.getElementById("loading-text");
+    const badgeText   = document.getElementById("badge-text");
+    const badgeDot    = document.querySelector(".badge-dot");
+
+    function showLoading(msg) {
+      loadText.textContent = msg;
+      loadOverlay.classList.remove("hidden");
+    }
+    function hideLoading() {
+      loadOverlay.classList.add("hidden");
+    }
+    function setStatus(text, type) {
+      badgeText.textContent = text;
+      badgeDot.className = `badge-dot badge-dot--${type}`;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // TAB SWITCHING
+    // ══════════════════════════════════════════════════════════════════════════
+
+    const tabBtns     = document.querySelectorAll(".tab-btn");
+    const tabContents = document.querySelectorAll(".tab-content");
+
+    tabBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const targetId = btn.dataset.tab;
+        tabBtns.forEach(b => {
+          b.classList.remove("tab-btn--active");
+          b.setAttribute("aria-selected", "false");
+        });
+        tabContents.forEach(c => c.classList.add("hidden"));
+        btn.classList.add("tab-btn--active");
+        btn.setAttribute("aria-selected", "true");
+        document.getElementById(targetId).classList.remove("hidden");
+        setStatus("Ready", "ready");
+      });
+    });
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // TAB 1 — DELIVERY QUALITY REPORT
+    // ══════════════════════════════════════════════════════════════════════════
+
+    let currentRows  = null;
     let currentMonth = "";
 
-    // ── Elements ───────────────────────────────────────────────────────────────
     const dropzone   = document.getElementById("dropzone");
     const fileInput  = document.getElementById("file-input");
     const dzText     = document.getElementById("dz-text");
@@ -221,12 +381,8 @@
     const monthLabel = document.getElementById("month-label");
     const riderCount = document.getElementById("rider-count");
     const downloadBtn= document.getElementById("download-btn");
-    const loadOverlay= document.getElementById("loading-overlay");
-    const loadText   = document.getElementById("loading-text");
-    const badgeText  = document.getElementById("badge-text");
-    const badgeDot   = document.querySelector(".badge-dot");
 
-    // ── Segment colours (mirrors Python dict) ─────────────────────────────────
+    // Segment colours (mirrors Python dict)
     const SEG_STYLE = {
       A: { bg: "#22c55e", fg: "#fff" },
       B: { bg: "#86efac", fg: "#14532d" },
@@ -236,12 +392,11 @@
       F: { bg: "#2C3A47", fg: "#fff" },
     };
 
-    // ── Drag-and-drop ──────────────────────────────────────────────────────────
+    // Drag-and-drop
     dropzone.addEventListener("click", () => fileInput.click());
     dropzone.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") fileInput.click();
     });
-
     dropzone.addEventListener("dragover", (e) => {
       e.preventDefault();
       dropzone.classList.add("drag-over");
@@ -253,18 +408,16 @@
       const file = e.dataTransfer.files[0];
       if (file) handleFile(file);
     });
-
     fileInput.addEventListener("change", () => {
       if (fileInput.files[0]) handleFile(fileInput.files[0]);
     });
 
-    // ── File handling ──────────────────────────────────────────────────────────
     function handleFile(file) {
       if (!file.name.toLowerCase().endsWith(".csv")) {
-        showError("Please upload a .csv file.");
+        showDQError("Please upload a .csv file.");
         return;
       }
-      hideError();
+      hideDQError();
       uploadFile(file);
     }
 
@@ -276,22 +429,21 @@
       fd.append("file", file);
 
       try {
-        const res = await fetch("/upload", { method: "POST", body: fd });
+        const res  = await fetch("/upload", { method: "POST", body: fd });
         const data = await res.json();
 
         if (!res.ok) {
-          showError(data.detail || "Upload failed.");
+          showDQError(data.detail || "Upload failed.");
           setStatus("Error", "error");
           hideLoading();
           return;
         }
 
-        currentRows = data._rows;
+        currentRows  = data._rows;
         currentMonth = data.month;
         renderPreview(data);
         setStatus("Ready to download", "ready");
 
-        // Update dropzone to show file name
         dzText.innerHTML = `<strong>${file.name}</strong> — loaded successfully ✓`;
         dzIcon.innerHTML = `<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="1.5">
           <path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/>
@@ -299,7 +451,7 @@
         dropzone.classList.add("dz-success");
 
       } catch (err) {
-        showError("Network error — is the server running?");
+        showDQError("Network error — is the server running?");
         setStatus("Error", "error");
       } finally {
         hideLoading();
@@ -309,11 +461,11 @@
     function renderPreview(data) {
       monthLabel.textContent = data.month;
       riderCount.textContent = data.total_riders;
-      tableBody.innerHTML = "";
+      tableBody.innerHTML    = "";
 
       data.rows.forEach((row) => {
         const seg = SEG_STYLE[row.segment] || { bg: "#6b7280", fg: "#fff" };
-        const tr = document.createElement("tr");
+        const tr  = document.createElement("tr");
         tr.innerHTML = `
           <td class="td-center">${row.sr}</td>
           <td class="td-center td-id">${row.rider_id}</td>
@@ -332,12 +484,10 @@
 
       previewSec.classList.remove("hidden");
       downloadBtn.disabled = false;
-
-      // Smooth scroll to preview
       setTimeout(() => previewSec.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
     }
 
-    // ── Download PDF ───────────────────────────────────────────────────────────
+    // Download Delivery Quality PDF
     downloadBtn.addEventListener("click", async () => {
       if (!currentRows) return;
       showLoading("Generating PDF…");
@@ -352,15 +502,15 @@
 
         if (!res.ok) {
           const err = await res.json();
-          showError(err.detail || "PDF generation failed.");
+          showDQError(err.detail || "PDF generation failed.");
           setStatus("Error", "error");
           return;
         }
 
-        const blob = await res.blob();
-        const url  = URL.createObjectURL(blob);
-        const a    = document.createElement("a");
-        const cd   = res.headers.get("content-disposition") || "";
+        const blob  = await res.blob();
+        const url   = URL.createObjectURL(blob);
+        const a     = document.createElement("a");
+        const cd    = res.headers.get("content-disposition") || "";
         const match = cd.match(/filename="?([^"]+)"?/);
         a.href     = url;
         a.download = match ? match[1] : `3PL_Report_${currentMonth.replace(" ", "_")}.pdf`;
@@ -368,10 +518,10 @@
         a.click();
         a.remove();
         URL.revokeObjectURL(url);
-
         setStatus("Downloaded ✓", "ready");
+
       } catch (err) {
-        showError("Download failed — network error.");
+        showDQError("Download failed — network error.");
         setStatus("Error", "error");
       } finally {
         hideLoading();
@@ -379,34 +529,26 @@
       }
     });
 
-    // ── UI helpers ─────────────────────────────────────────────────────────────
-    function showError(msg) {
+    // DQ error helpers
+    function showDQError(msg) {
       errorMsg.textContent = msg;
       errorBox.classList.remove("hidden");
     }
-    function hideError() {
+    function hideDQError() {
       errorBox.classList.add("hidden");
     }
-    function showLoading(msg) {
-      loadText.textContent = msg;
-      loadOverlay.classList.remove("hidden");
-    }
-    function hideLoading() {
-      loadOverlay.classList.add("hidden");
-    }
-    function setStatus(text, type) {
-      badgeText.textContent = text;
-      badgeDot.className = `badge-dot badge-dot--${type}`;
-    }
 
-    // ── Manage Riders ────────────────────────────────────────────────────────
-    const manageModal = document.getElementById("manage-modal");
-    const modalTitle = document.getElementById("modal-title");
-    const manageId = document.getElementById("manage-id");
+    // ══════════════════════════════════════════════════════════════════════════
+    // MANAGE RIDERS (shared — visible in Tab 1)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    const manageModal     = document.getElementById("manage-modal");
+    const modalTitle      = document.getElementById("modal-title");
+    const manageId        = document.getElementById("manage-id");
     const manageNameGroup = document.getElementById("manage-name-group");
-    const manageName = document.getElementById("manage-name");
-    const managePass = document.getElementById("manage-pass");
-    
+    const manageName      = document.getElementById("manage-name");
+    const managePass      = document.getElementById("manage-pass");
+
     let manageMode = "add"; // "add" or "delete"
 
     document.getElementById("btn-add-rider").addEventListener("click", () => {
@@ -433,14 +575,14 @@
     });
 
     document.getElementById("btn-modal-submit").addEventListener("click", async () => {
-      const id = manageId.value.trim();
+      const id   = manageId.value.trim();
       const pass = managePass.value.trim();
       const name = manageName.value.trim();
 
       if (!id || !pass) return alert("ID and Password are required.");
       if (manageMode === "add" && !name) return alert("Name is required.");
 
-      const payload = manageMode === "add" 
+      const payload = manageMode === "add"
         ? { rider_id: id, name: name, password: pass }
         : { rider_id: id, password: pass };
 
@@ -448,15 +590,13 @@
       manageModal.classList.add("hidden");
 
       try {
-        const res = await fetch("/rider", {
+        const res  = await fetch("/rider", {
           method: manageMode === "add" ? "POST" : "DELETE",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
         });
-        
         const text = await res.json();
         hideLoading();
-        
         if (!res.ok) {
           alert("Error: " + (text.detail || res.statusText));
         } else {
@@ -469,14 +609,14 @@
     });
 
     // ── View Riders ──────────────────────────────────────────────────────────
-    const viewModal = document.getElementById("view-riders-modal");
-    const viewPass = document.getElementById("view-pass");
-    const viewContainer = document.getElementById("view-riders-container");
+    const viewModal       = document.getElementById("view-riders-modal");
+    const viewPass        = document.getElementById("view-pass");
+    const viewContainer   = document.getElementById("view-riders-container");
     const viewSearchInput = document.getElementById("view-search-input");
-    const viewTableBody = document.getElementById("view-table-body");
-    
+    const viewTableBody   = document.getElementById("view-table-body");
+
     let allRidersCache = [];
-    let searchTimeout = null;
+    let searchTimeout  = null;
 
     function renderViewTable(ridersArray) {
       viewTableBody.innerHTML = "";
@@ -500,31 +640,22 @@
     viewSearchInput.addEventListener("input", (e) => {
       const q = e.target.value.trim();
       clearTimeout(searchTimeout);
-      
       searchTimeout = setTimeout(async () => {
-        if (!q) {
-          renderViewTable(allRidersCache);
-          return;
-        }
+        if (!q) { renderViewTable(allRidersCache); return; }
         try {
           const res = await fetch(`/search?query=${encodeURIComponent(q)}`);
-          if (res.ok) {
-            const data = await res.json();
-            renderViewTable(data);
-          }
-        } catch (err) {
-          console.error("Search failed", err);
-        }
-      }, 300); // 300ms debounce
+          if (res.ok) { renderViewTable(await res.json()); }
+        } catch (err) { console.error("Search failed", err); }
+      }, 300);
     });
-    
+
     document.getElementById("btn-view-riders").addEventListener("click", () => {
       viewPass.value = "";
       viewSearchInput.value = "";
       viewContainer.style.display = "none";
       viewModal.classList.remove("hidden");
     });
-    
+
     document.getElementById("btn-close-view").addEventListener("click", () => {
       viewModal.classList.add("hidden");
     });
@@ -532,19 +663,13 @@
     document.getElementById("btn-fetch-riders").addEventListener("click", async () => {
       const pass = viewPass.value.trim();
       if (!pass) return alert("Password is required.");
-      
       showLoading("Fetching riders...");
       try {
-        const res = await fetch(`/riders?req_password=${encodeURIComponent(pass)}`);
+        const res  = await fetch(`/riders?req_password=${encodeURIComponent(pass)}`);
         const data = await res.json();
         hideLoading();
-        
-        if (!res.ok) {
-          alert("Error: " + (data.detail || res.statusText));
-          return;
-        }
-        
-        allRidersCache = data.data; 
+        if (!res.ok) { alert("Error: " + (data.detail || res.statusText)); return; }
+        allRidersCache = data.data;
         viewSearchInput.value = "";
         renderViewTable(allRidersCache);
         viewContainer.style.display = "flex";
@@ -553,6 +678,200 @@
         alert("Network error.");
       }
     });
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // TAB 2 — RIDER PERFORMANCE REPORT
+    // ══════════════════════════════════════════════════════════════════════════
+
+    let perfRows       = null;
+    let perfReportDate = "";
+
+    const perfDropzone  = document.getElementById("perf-dropzone");
+    const perfFileInput = document.getElementById("perf-file-input");
+    const perfDzText    = document.getElementById("perf-dz-text");
+    const perfDzIcon    = document.getElementById("perf-dz-icon");
+    const perfErrorBox  = document.getElementById("perf-error-box");
+    const perfErrorMsg  = document.getElementById("perf-error-msg");
+    const perfWarningBox= document.getElementById("perf-warning-box");
+    const perfWarningIds= document.getElementById("perf-warning-ids");
+    const perfPreviewSec= document.getElementById("perf-preview-section");
+    const perfTableBody = document.getElementById("perf-table-body");
+    const perfDateLabel = document.getElementById("perf-date-label");
+    const perfRiderCount= document.getElementById("perf-rider-count");
+    const perfDownloadBtn= document.getElementById("perf-download-btn");
+
+    // Attendance / Acceptance rate colour helper (mirrors Python logic)
+    function getAttendanceStyle(pct) {
+      if (pct >= 95) return { bg: "#D1FAE5", fg: "#065F46" };
+      if (pct >= 80) return { bg: "#FEF3C7", fg: "#92400E" };
+      return { bg: "#FEE2E2", fg: "#991B1B" };
+    }
+    function getAcceptanceStyle(pct) {
+      if (pct >= 100) return { bg: "#D1FAE5", fg: "#065F46" };
+      if (pct >= 90)  return { bg: "#FEF3C7", fg: "#92400E" };
+      return { bg: "#FEE2E2", fg: "#991B1B" };
+    }
+
+    // Drag-and-drop
+    perfDropzone.addEventListener("click", () => perfFileInput.click());
+    perfDropzone.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") perfFileInput.click();
+    });
+    perfDropzone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      perfDropzone.classList.add("drag-over");
+    });
+    perfDropzone.addEventListener("dragleave", () => perfDropzone.classList.remove("drag-over"));
+    perfDropzone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      perfDropzone.classList.remove("drag-over");
+      const file = e.dataTransfer.files[0];
+      if (file) handlePerfFile(file);
+    });
+    perfFileInput.addEventListener("change", () => {
+      if (perfFileInput.files[0]) handlePerfFile(perfFileInput.files[0]);
+    });
+
+    function handlePerfFile(file) {
+      if (!file.name.toLowerCase().endsWith(".csv")) {
+        showPerfError("Please upload a .csv file.");
+        return;
+      }
+      hidePerfError();
+      uploadPerfFile(file);
+    }
+
+    async function uploadPerfFile(file) {
+      showLoading("Processing Performance CSV…");
+      setStatus("Processing…", "processing");
+
+      const fd = new FormData();
+      fd.append("file", file);
+
+      try {
+        const res  = await fetch("/upload-performance", { method: "POST", body: fd });
+        const data = await res.json();
+
+        if (!res.ok) {
+          showPerfError(data.detail || "Upload failed.");
+          setStatus("Error", "error");
+          hideLoading();
+          return;
+        }
+
+        perfRows       = data._rows;
+        perfReportDate = data.report_date;
+
+        // Show warning if any riders were not found
+        if (data.warnings && data.warnings.length > 0) {
+          perfWarningIds.textContent = data.warnings.join(", ");
+          perfWarningBox.classList.remove("hidden");
+        } else {
+          perfWarningBox.classList.add("hidden");
+        }
+
+        renderPerfPreview(data);
+        setStatus("Ready to download", "ready");
+
+        perfDzText.innerHTML = `<strong>${file.name}</strong> — loaded successfully ✓`;
+        perfDzIcon.innerHTML = `<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="1.5">
+          <path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/>
+        </svg>`;
+        perfDropzone.classList.add("dz-success");
+
+      } catch (err) {
+        showPerfError("Network error — is the server running?");
+        setStatus("Error", "error");
+      } finally {
+        hideLoading();
+      }
+    }
+
+    function renderPerfPreview(data) {
+      perfDateLabel.textContent  = data.report_date;
+      perfRiderCount.textContent = data.total_riders;
+      perfTableBody.innerHTML    = "";
+
+      data.rows.forEach((row) => {
+        const attPct = parseInt(row.attendance_rate);
+        const accPct = parseInt(row.acceptance_rate);
+        const attSty = getAttendanceStyle(attPct);
+        const accSty = getAcceptanceStyle(accPct);
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="td-center">${row.sr}</td>
+          <td class="td-center td-id">${row.rider_id}</td>
+          <td class="td-name" dir="rtl">${row.name}</td>
+          <td class="td-center" style="font-weight:700">${row.completed_deliveries}</td>
+          <td class="td-center">${row.shifts}</td>
+          <td class="td-center">${row.planned_hours}</td>
+          <td class="td-center">${row.actual_hours}</td>
+          <td class="td-center" style="background:${attSty.bg};color:${attSty.fg};font-weight:700">${row.attendance_rate}</td>
+          <td class="td-center">${row.break_hours}</td>
+          <td class="td-center">${row.lost_hours}</td>
+          <td class="td-center" style="background:${accSty.bg};color:${accSty.fg};font-weight:700">${row.acceptance_rate}</td>
+          <td class="td-center">${row.declined_deliveries}</td>
+        `;
+        perfTableBody.appendChild(tr);
+      });
+
+      perfPreviewSec.classList.remove("hidden");
+      perfDownloadBtn.disabled = false;
+      setTimeout(() => perfPreviewSec.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+    }
+
+    // Download Performance PDF
+    perfDownloadBtn.addEventListener("click", async () => {
+      if (!perfRows) return;
+      showLoading("Generating Performance PDF…");
+      perfDownloadBtn.disabled = true;
+
+      try {
+        const res = await fetch("/generate-performance", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ report_date: perfReportDate, rows: perfRows }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          showPerfError(err.detail || "PDF generation failed.");
+          setStatus("Error", "error");
+          return;
+        }
+
+        const blob  = await res.blob();
+        const url   = URL.createObjectURL(blob);
+        const a     = document.createElement("a");
+        const cd    = res.headers.get("content-disposition") || "";
+        const match = cd.match(/filename="?([^"]+)"?/);
+        a.href     = url;
+        a.download = match ? match[1] : `3PL_Performance_Report_${perfReportDate.replace(" ", "_")}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        setStatus("Downloaded ✓", "ready");
+
+      } catch (err) {
+        showPerfError("Download failed — network error.");
+        setStatus("Error", "error");
+      } finally {
+        hideLoading();
+        perfDownloadBtn.disabled = false;
+      }
+    });
+
+    // Performance error helpers
+    function showPerfError(msg) {
+      perfErrorMsg.textContent = msg;
+      perfErrorBox.classList.remove("hidden");
+    }
+    function hidePerfError() {
+      perfErrorBox.classList.add("hidden");
+    }
+
   </script>
 </body>
 </html>

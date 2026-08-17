@@ -11,6 +11,7 @@ from fastapi import status
 import logging
 from contextlib import asynccontextmanager
 from typing import Any
+from datetime import datetime
 
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
@@ -21,7 +22,9 @@ import io
 from core.csv_processor import DataError, process_csv, rows_to_preview
 from core.pdf_generator import generate_pdf
 from core.rider_parser import build_rider_lookup
-from models.schemas import GenerateRequest, UploadResponse, RiderAdd, RiderDelete
+from core.performance_processor import process_performance_csv, perf_rows_to_preview
+from core.performance_pdf_generator import generate_performance_pdf
+from models.schemas import GenerateRequest, UploadResponse, RiderAdd, RiderDelete, PerformanceRow, PerfGenerateRequest
 from helper.json_helper import read_json, write_json
 
 logging.basicConfig(level=logging.INFO)
@@ -217,3 +220,73 @@ async def health() -> dict[str, Any]:
         "status": "ok",
         "riders_loaded": len(_rider_lookup),
     }
+
+
+# ── Performance Report Routes ─────────────────────────────────────────────────
+
+@app.post("/upload-performance")
+async def upload_performance_csv(file: UploadFile = File(...)) -> JSONResponse:
+    """
+    Accept a 3PL Performance CSV, validate it, match rider names, and return
+    a JSON preview + the PerformanceRow data needed by /generate-performance.
+    Unmatched rider IDs are returned as a 'warnings' list instead of raising.
+    """
+    fname = file.filename or ""
+    if not fname.lower().endswith(".csv"):
+        raise HTTPException(
+            status_code=415,
+            detail="Only .csv files are accepted. Please upload your 3PL Performance CSV.",
+        )
+
+    content = await file.read()
+    if not content:
+        raise HTTPException(status_code=422, detail="The uploaded file is empty.")
+
+    try:
+        rows, unmatched = process_performance_csv(content, _rider_lookup)
+    except DataError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except Exception as exc:
+        logger.exception("Unexpected error while processing Performance CSV")
+        raise HTTPException(status_code=500, detail=f"Internal error: {exc}")
+
+    report_date = datetime.now().strftime("%b %Y")
+    preview = perf_rows_to_preview(rows)
+
+    return JSONResponse({
+        "report_date": report_date,
+        "total_riders": len(rows),
+        "rows": preview,
+        # Full row data passed back for the /generate-performance endpoint
+        "_rows": [r.model_dump() for r in rows],
+        # Rider IDs not found in rider_names.json
+        "warnings": unmatched,
+    })
+
+
+@app.post("/generate-performance")
+async def generate_performance_report(request: PerfGenerateRequest) -> StreamingResponse:
+    """
+    Accept the validated performance row data and return a landscape PDF download.
+    """
+    if not request.rows:
+        raise HTTPException(status_code=422, detail="No rows provided.")
+
+    try:
+        pdf_bytes = generate_performance_pdf(request.rows, report_date=request.report_date)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=500, detail=f"Font file missing: {exc}")
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    except Exception as exc:
+        logger.exception("Unexpected error while generating Performance PDF")
+        raise HTTPException(status_code=500, detail=f"Internal error: {exc}")
+
+    date_slug = request.report_date.replace(" ", "_")
+    filename  = f"3PL_Performance_Report_{date_slug}.pdf"
+
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

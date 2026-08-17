@@ -79,3 +79,27 @@ class RiderRequest(BaseModel):
 
 class RiderResponse(BaseModel):
     data: list[dict[str, str]]
+
+
+class PerformanceRow(BaseModel):
+    """A single validated, name-enriched rider record for the performance report."""
+
+    rider_id: str
+    name: str
+    completed_deliveries: int = Field(..., ge=0)
+    shifts: int = Field(..., ge=0)
+    planned_hours: float = Field(..., ge=0)
+    actual_hours: float = Field(..., ge=0)
+    attendance_rate: int = Field(..., ge=0, le=100)  # stored as 0-100
+    break_hours: float = Field(..., ge=0)
+    lost_hours: float = Field(..., ge=0)
+    acceptance_rate: int = Field(..., ge=0, le=100)  # stored as 0-100
+    declined_deliveries: int = Field(..., ge=0)
+    city: str = ""
+
+
+class PerfGenerateRequest(BaseModel):
+    """Request body for POST /generate-performance."""
+
+    rows: list[PerformanceRow]
+    report_date: str  # e.g. "Aug 2026" — shown in PDF header
